@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ title }}</title>
+    <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins" , sans-serif;
+        }
+
+        .navbar {
+            width: 240px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: #333;
+            display: flex;         
+            flex-direction: column;
+        }
+
+        .navbar a {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            color: white;
+            text-decoration: none;
+            gap: 10px;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+
+        h3 {
+            display: block;
+            text-align: center;
+            padding: 10px 15px;
+            color: white;
+            text-decoration: none;
+            gap: 10px;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+
+        .navbar a:hover {
+            background-color: #4b00b5;
+            border-radius: 10px;
+        }
+
+        .logo {
+            width: 100%;
+            height: auto;
+        }
+
+        a[href="/logout"] {
+            margin-top: auto;
+        }
+
+        .username{
+            align-items: center;
+        }
+
+        .footer {
+            margin-top: 10px;
+            padding: 10px;
+            display: block;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.505);
+            font-size: 12px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            animation: rotate 2s linear infinite;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            margin-top: -25px;
+            margin-left: -25px;
+            display: none;
+        }
+
+        .path {
+            stroke: #4b00b5;
+            stroke-linecap: round;
+            animation: dash 1.5s ease-in-out infinite;
+        }
+
+        @keyframes rotate {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes dash {
+            0% {
+                stroke-dasharray: 1, 150;
+                stroke-dashoffset: 0;
+            }
+            50% {
+                stroke-dasharray: 90, 150;
+                stroke-dashoffset: -35;
+            }
+            100% {
+                stroke-dasharray: 1, 150;
+                stroke-dashoffset: -124;
+            }
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <img src="{{ url_for('static', filename='images/CloudSpartan.png') }}" class="logo">
+        <div class="username">
+            <h3>Welcome, {{ username }}!</h3>
+        </div>
+    
+        <a href="/dashboard">
+            <i class="bx bx-grid-alt"></i> 
+            Dashboard
+        </a>
+        <a href="/report">
+            <i class="bx bx-pie-chart-alt-2"></i> 
+            Compliance Report
+        </a>
+        <a href="/threatdetection">
+            <i class="bx bx-shield"></i> 
+            Threat Detection
+        </a>
+        <a href="/settings">
+            <i class="bx bx-cog"></i> 
+            Settings
+        </a>
+        <a href="/logout">
+            <i class="bx bx-log-out"></i> 
+            Log Out
+        </a>
+        <p class="footer">Coppola Development</p>
+    </div>
+    <div style="margin-left: 260px;">
+        {% block content %} {% endblock %}
+    </div>   
+    
+    <div class="overlay"></div>
+    <svg class="spinner" viewBox="0 0 50 50">
+        <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+    </svg>    
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var spinner = document.querySelector('.spinner');
+        var overlay = document.querySelector('.overlay');
+        var links = document.querySelectorAll('.navbar a');
+        
+        links.forEach(function(link) {
+            link.addEventListener('click', function() {
+                spinner.style.display = 'block';
+                overlay.style.display = 'block';
+            });
+        });
+        
+        window.addEventListener('load', function() {
+            spinner.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+    });
+</script>
+</html>

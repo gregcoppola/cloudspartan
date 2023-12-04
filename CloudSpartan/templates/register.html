@@ -1,0 +1,122 @@
+{% if error %}
+<script>
+    alert("{{ error }}");
+</script>
+{% endif %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            height: 95vh;
+            background: rgb(50,50,50);
+            background: radial-gradient(circle, rgba(50,50,50,1) 33%, rgba(92,92,108,1) 82%, rgba(113,120,128,1) 100%);
+            padding-top: 2px;
+            box-sizing: border-box;
+        }
+
+        form {
+            background-color: #c7c7c7;
+            padding-left: 40px;
+            padding-right: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        form::before {
+            content: "";
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            background: #4b00b5;
+            z-index: -1;
+            border-radius: 10px;
+            border-width: thin;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: black;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"] {
+            width: 92%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background: rgb(2,0,36);
+            background: #333;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        input[type="submit"]:hover {
+            background-color: #4b00b5;
+        }
+
+        .login {
+            margin-top: 10px;
+            padding: 10px;
+            display: block;
+            text-align: center;
+            color: #333;
+            font-size: 12px;
+        }
+
+        .logo {
+            width: 80%;
+            height: auto;
+        }
+
+        a:link {
+            color:#333;
+        }
+
+        a:vistied {
+            color:#333;
+        }
+
+    </style>
+</head>
+<body>
+    <form action="/register" method="post">
+        <img src="{{ url_for('static', filename='images/CloudSpartan.png') }}" class="logo">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        <label for="access_key">AWS Account Number:</label>
+        <input type="text" id="aws_account_number" name="aws_account_number" required><br><br>
+        <label for="access_key">AWS Access Key:</label>
+        <input type="text" id="access_key" name="access_key" required><br><br>
+        <label for="secret_key">AWS Secret Key:</label>
+        <input type="password" id="secret_key" name="secret_key" required><br><br>
+        <input type="submit" value="Register">
+        <div class="login">
+            Already have an account?  
+            <a href="/login">Login</a>
+        </div>
+    </form>
+</body>
+</html>

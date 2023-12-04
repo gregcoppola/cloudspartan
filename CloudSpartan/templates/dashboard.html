@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f4f4f4;
+    }
+
+    .main {
+        position: relative;
+        width: 100%;
+        padding-top: 40px;
+    }
+
+    .main-content {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .card {
+        flex: 1;
+        position: relative;
+        margin: 10px;
+        margin-bottom: 0px;
+        background: #fff;
+        text-align: center;
+        border-radius: 20px;
+        padding: 10px;
+        box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
+        height: 250px;
+    }
+
+    .card h3 {
+        margin: 10px;
+        text-transform: capitalize;
+        color: black;
+    }
+
+    .card p {
+        font-size: 17px;
+    }
+
+    .card button {
+        background-color: #333;
+        position: absolute;
+        bottom: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .card button:hover {
+        background-color: #4b00b5;
+    }
+
+    .inventory-widget {
+        flex: 1;
+        width: 45%;
+        margin-top: 20px;
+        padding: 10px;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
+    }
+
+    .inventory-widget h3 {
+        margin: 10px;
+        text-transform: capitalize;
+        color: black;
+        text-align: center;
+    }
+
+    .inventory-widget table {
+        width: 100%;
+        font-size: 14px;
+        border-collapse: collapse;
+    }
+
+    .inventory-widget th, .inventory-widget td {
+        padding: 8px 12px;
+        border: 1px solid #e5e5e5;
+        text-align: left;
+    }
+
+    .inventory-widget th {
+        background-color: #f2f2f2;
+        color: #555;
+    }
+
+    .inventory-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .inventory-widget {
+        width: 49%;
+        margin: 0.5%;
+        padding: 10px;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
+    }
+
+    p i {
+        margin-right: 2px;
+    }
+
+    #severityChart {
+        height: 300px;
+        width: 100%;
+    }
+
+    h2 {
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-top: 20px;
+        padding-left: 20px;
+    }
+
+    .chart-container {
+        width: 90%;
+        height: 120px;
+        margin: 0 auto;
+        padding-bottom: 10px;
+    }
+
+</style>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+</head>
+
+<body>
+    <section class="main">
+        <h2>Overview</h2>
+        <div class="main-content">
+            <div class="card">
+                <h3>Compliance Overview</h3>
+                <div class="chart-container">
+                    <canvas id="complianceChart"></canvas>
+                </div>
+                <a href="/report">
+                    <button>View Details</button>
+                </a>
+            </div>            
+
+            <div class="card">
+                <h3>GuardDuty Summary</h3>
+                <p>Count of Findings:</p>
+                <p style="font-size: 50px;">{{ findings_count }}</p>
+                <a href="/threatdetection">
+                    <button>View Findings</button>
+                </a>
+            </div>
+
+            <div class="card">
+                <h3>Service Connection Status</h3>
+                <p><i class="bx bx-user"></i> <strong>AWS Account Status:</strong> {{ aws_account_status }}</p>
+                <p><i class="bx bx-pie-chart-alt-2"></i> <strong>Compliance Monitoring Status:</strong> {{ aws_account_status }}</p>
+                <p><i class="bx bx-cloud"></i> <strong>CloudTrail Status:</strong> {{ cloudtrail_status }}</p>
+                <p><i class="bx bx-shield"></i> <strong>GuardDuty Status:</strong> {{ detector_id_status }}</p>
+                <a href="/settings">
+                    <button>Settings</button>
+                </a>
+            </div>
+        </div>
+
+        <div class="inventory-container">
+            <div class="inventory-widget">
+                <h3>AWS Config Resource Inventory</h3>
+                <div class="widget-content">
+                    <table>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for resource_type, count in resource_counts %}
+                                <tr>
+                                    <td>{{ resource_type.replace("::", " ") }}</td>
+                                    <td>{{ count }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </table>
+                </div>
+            </div>
+
+            <div class="inventory-widget">
+                <h3>Misconfiguration Severity Count</h3>
+                <div class="widget-content">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+  </section>
+</div>
+<script>
+
+    var severityData = JSON.parse('{{ severity_counts | tojson | safe }}' || '{}');
+    var severities = Object.keys(severityData);
+    var counts = Object.values(severityData);
+
+    var severityOrder = ['Critical', 'High', 'Medium', 'Low'];
+
+    severities.sort(function(a, b) {
+        return severityOrder.indexOf(a) - severityOrder.indexOf(b);
+    });
+
+    counts = counts.map((_, i) => severityData[severities[i]]);
+
+    document.querySelectorAll(".severityTable tbody tr").forEach(row => {
+        severities.push(row.children[0].textContent);
+        counts.push(parseInt(row.children[1].textContent, 10));
+    });
+
+    var ctx = document.getElementById('severityChart').getContext('2d');
+    var chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: severities,
+            datasets: [{
+                label: '',
+                data: counts,
+                backgroundColor: ['red', 'orange', 'yellow', 'green'] 
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    var compliantCount = JSON.parse('{{ compliant_count }}');
+    var nonCompliantCount = JSON.parse('{{ non_compliant_count }}');
+
+    var complianceCtx = document.getElementById('complianceChart').getContext('2d');
+    var complianceChart = new Chart(complianceCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Compliant', 'Non-Compliant'],
+            datasets: [{
+                label: 'Compliance Status',
+                data: [compliantCount, nonCompliantCount],
+                backgroundColor: ['green', 'red']
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+</script>
+</body>
+{% endblock %}

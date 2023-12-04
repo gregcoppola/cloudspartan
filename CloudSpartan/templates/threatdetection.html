@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f4f4f4;
+        padding-top: 40px;
+        font-family: "Poppins", sans-serif;
+    }
+
+    h2 {
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-left: 5px;
+    }
+
+    table {
+        width: 90%;
+        margin-left: 5px;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 15px 25px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #333;
+        color: white;
+    }
+
+    td {
+        border-bottom: 1px solid #e0e0e0;
+        color: black;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%; 
+        height: 100%;
+        overflow: auto; 
+        background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 60%;
+        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .filter-section {
+        margin-bottom: 20px;
+    }
+
+    .filter-section label, .filter-section select {
+        margin-right: 10px;
+        padding-left: 5px;
+    }
+
+</style>
+
+<h2>GuardDuty Alerts</h2>
+
+<div class="filter-section">
+    <label for="severityFilter">Filter by Severity: </label>
+    <select id="severityFilter">
+        <option value="">All</option>
+        <option value="Critical">Critical</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+    </select>
+</div>
+
+<table id="findings">
+    <thead>
+        <tr>
+            <th>Severity</th>
+            <th>Time Detected</th>
+            <th>Title</th>
+            <th>Finding Type</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for finding in findings %}
+        {% if finding.Archived is not defined or finding.Archived != true %}
+            <tr data-description="{{ finding.Description }}"
+            data-id="{{ finding.Id }}">
+                <td>
+                    {% if 1 <= finding.Severity <= 3 %}
+                        Low
+                    {% elif 4 <= finding.Severity <= 6 %}
+                        Medium
+                    {% elif 7 <= finding.Severity <= 9 %}
+                        High
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                </td>
+                <td>{{ finding.CreatedAt }}</td>
+                <td>{{ finding.Title }}</td>
+                <td>{{ finding.Type }}</td>
+            </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+
+<div id="noDataMsg" style="display: none; text-align: center; margin-top: 50px; font-size: 20px; color: #555;">
+    No Data to Display
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3 style="color: red; font-size: 24px;">Finding Details</h3>
+        <p><strong>Severity:</strong> <span id="modalSeverity"></span></p>
+        <p><strong>Time Detected:</strong> <span id="modalCreatedAt"></span></p>
+        <p><strong>Title:</strong> <span id="modalTitle"></span></p>
+        <p><strong>Finding Type:</strong> <span id="modalType"></span></p>
+        <p><strong>Finding ID:</strong> <span id="modalID"></span></p>
+        <p><strong>Description:</strong> <span id="modalDescription"></span></p>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var modal = document.getElementById("modal");
+        var span = document.getElementsByClassName("close")[0];
+
+        document.querySelectorAll("tbody tr").forEach(function(row) {
+            row.addEventListener('click', function() {
+                document.getElementById('modalSeverity').textContent = this.cells[0].textContent;
+                document.getElementById('modalCreatedAt').textContent = this.cells[1].textContent;
+                document.getElementById('modalTitle').textContent = this.cells[2].textContent;
+                document.getElementById('modalType').textContent = this.cells[3].textContent;
+                document.getElementById('modalDescription').textContent = this.getAttribute('data-description');
+                document.getElementById('modalID').textContent = this.getAttribute('data-id');
+                modal.style.display = "block";
+            });
+        });
+
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    });
+
+    function filterTable() {
+            var severityFilter = document.getElementById('severityFilter').value;
+            var rows = document.querySelectorAll("#findings tbody tr");
+            var anyVisible = false;
+
+            document.querySelectorAll("#findings tbody tr").forEach(function(row) {
+                var severity = row.cells[0].textContent.trim();
+
+                if ((severityFilter === "" || severity === severityFilter)) {
+                    row.style.display = "";
+                    anyVisible = true;
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        
+            if (anyVisible || severityFilter === "") {
+                document.getElementById('noDataMsg').style.display = "none";
+            } else {
+                document.getElementById('noDataMsg').style.display = "block";
+            }
+    }
+
+        document.getElementById('severityFilter').addEventListener('change', filterTable);
+
+    
+</script>
+
+{% endblock %}

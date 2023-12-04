@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}Compliance Report{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f4f4f4;
+        padding-top: 40px;
+        font-family: "Poppins", sans-serif;
+    }
+
+    h2 {
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-left: 5px;
+    }
+
+    table {
+        width: 90%;
+        margin-left: 5px;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 15px 25px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #333;
+        color: white;
+    }
+
+    td {
+        border-bottom: 1px solid #e0e0e0;
+        color: black;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .short-content button, .full-content button {
+        margin-left: 5px;
+        padding: 2px 8px;
+        background: #020024;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        border-radius: 6px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s;
+    }
+
+    .short-content button:hover, .full-content button:hover {
+        background-color: #333;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%; 
+        height: 100%;
+        overflow: auto; 
+        background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 60%;
+        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .filter-section {
+        margin-bottom: 20px;
+    }
+
+    .filter-section label, .filter-section select {
+        margin-right: 10px;
+        padding-left: 5px;
+    }
+
+
+</style>
+<body>
+    <h2>AWS Config Non-Compliant Resource Findings</h2>
+    <div class="filter-section">
+        <label for="severityFilter">Filter by Severity: </label>
+        <select id="severityFilter">
+            <option value="">All</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+        </select>
+        
+        <label for="resourceTypeFilter">Filter by Resource Type: </label>
+        <select id="resourceTypeFilter">
+            <option value="">All</option>
+            <option value="Account">Account</option>
+            <option value="EC2 Instance">EC2 Instance</option>
+            <option value="EC2 Volume">EC2 Volume</option>
+            <option value="EC2 Internet Gateway">EC2 InternetGateway</option>
+            <option value="EC2 Security Group">EC2 SecurityGroup</option>
+            <option value="EC2 Subnet">EC2 Subnet</option>
+            <option value="EC2 VPC">EC2 VPC</option>
+            <option value="CloudTrail Trail">CloudTrail Trail</option>
+            <option value="IAM User">IAM User</option>
+            <option value="S3 Bucket">S3 Bucket</option>
+        </select>
+    </div>
+    
+    <table id="findings">
+        <thead>
+            <tr>
+                <th>Severity</th>
+                <th>Rule</th>
+                <th>Resource Name</th>
+                <th>Resource Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for finding in findings %}
+            <tr data-description="{{ description[finding.rule_name] if finding.rule_name in description else 'No specific description available.' }}"
+                data-remediation="{{ remediation_steps[finding.rule_name] if finding.rule_name in remediation_steps else 'No specific recommendation available.' }}">
+                <td>{{ severity[finding.rule_name] if finding.rule_name in severity else 'N/A' }}</td>
+                <td>{{ finding.rule_name }}</td>
+                <td>{{ finding.resource_name }}</td>
+                <td>{{ finding.resource_type.replace("::", " ").replace("AWS", "") }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>            
+    </table>
+
+    <div id="noDataMsg" style="display: none; text-align: center; margin-top: 50px; font-size: 20px; color: #555;">
+        No Data to Display
+    </div>    
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 style="color: red; font-size: 24px;">Finding Details</h3>
+            <p><strong>Severity:</strong> <span id="modalSeverity"></span></p>
+            <p><strong>Rule:</strong> <span id="modalRule"></span></p>
+            <p><strong>Resource Name:</strong> <span id="modalResourceName"></span></p>
+            <p><strong>Resource Type:</strong> <span id="modalResourceType"></span></p>
+            <p><strong>Finding Description:</strong> <span id="modalDescription"></span></p>
+            <p><strong>Finding Remediation:</strong> <span id="modalRemediation"></span></p>
+        </div>
+    </div>    
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var modal = document.getElementById("modal");
+            var span = document.getElementsByClassName("close")[0];
+
+            document.querySelectorAll("#findings tbody tr").forEach(function(row) {
+                row.addEventListener('click', function() {
+                    console.log("Row clicked!");
+
+                    document.getElementById('modalSeverity').textContent = this.cells[0].textContent;
+                    document.getElementById('modalRule').textContent = this.cells[1].textContent;
+                    document.getElementById('modalResourceName').textContent = this.cells[2].textContent;
+                    document.getElementById('modalResourceType').textContent = this.cells[3].textContent;
+                    document.getElementById('modalDescription').textContent = this.getAttribute('data-description');
+                    document.getElementById('modalRemediation').textContent = this.getAttribute('data-remediation');
+
+                    
+                    modal.style.display = "block";
+                });
+            });
+
+
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+        });
+
+        function filterTable() {
+            var severityFilter = document.getElementById('severityFilter').value;
+            var resourceTypeFilter = document.getElementById('resourceTypeFilter').value.replace("::", " ").replace("AWS", "");
+            var rows = document.querySelectorAll("#findings tbody tr");
+            var anyVisible = false;
+
+            document.querySelectorAll("#findings tbody tr").forEach(function(row) {
+                var severity = row.cells[0].textContent.trim();
+                var resourceType = row.cells[3].textContent.trim(); 
+
+                if ((severityFilter === "" || severity === severityFilter) &&
+                    (resourceTypeFilter === "" || resourceType === resourceTypeFilter)) {
+                    row.style.display = "";
+                    anyVisible = true;
+                } else {
+                    row.style.display = "none";
+                }
+            });
+
+            if (anyVisible || severityFilter === "") {
+                document.getElementById('noDataMsg').style.display = "none";
+            } else {
+                document.getElementById('noDataMsg').style.display = "block";
+            }
+        }
+
+        document.getElementById('severityFilter').addEventListener('change', filterTable);
+        document.getElementById('resourceTypeFilter').addEventListener('change', filterTable);
+    </script>
+</body>
+{% endblock %}

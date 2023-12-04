@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}CloudTrail Logs{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f4f4f4;
+        padding-top: 40px;
+        font-family: "Poppins", sans-serif;
+    }
+
+    h2 {
+        color: #333;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-left: 5px;
+    }
+
+    table {
+        width: 90%;
+        margin-left: 5px;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 15px 25px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #333;
+        color: white;
+    }
+
+    td {
+        border-bottom: 1px solid #e0e0e0;
+        color: black;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+<body>
+    <h2>CloudTrail Logs</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Event Time</th>
+                <th>Event Name</th>
+                <th>Event Source</th>
+                <th>Username</th>
+                <th>Source IP Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+                {% for record in log['Records'] %}
+                    <tr>
+                        <td>{{ record['eventTime'] }}</td>
+                        <td>{{ record['eventName'] }}</td>
+                        <td>{{ record['eventSource'] }}</td>
+                        <td>{{ record['userIdentity']['arn'] if 'arn' in record['userIdentity'] else 'N/A' }}</td>
+                        <td>{{ record['sourceIPAddress'] }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+{% endblock %}
